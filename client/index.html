@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html ng-app="friends_app">
+  <head>
+    <meta charset="utf-8">
+    <title> MEAN Friends </title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+    <script>
+    //Angular code here
+    //Creating Angular module
+    var friends_app = angular.module("friends_app", []);
+
+    //Creating the friendFactory
+    friends_app.factory("friendFactory", function($http){
+      var factory = {};
+      var friends = [];
+
+      //Restful syntax: index = get all that object
+      factory.getFriends = function(callback){
+        $http.get("/friends").success(function(output){
+          friends = output;
+          callback(friends);
+        });
+      };
+
+      //Using callbacks
+      //Restful syntax: create = add one to that object
+      factory.addFriend = function(info, callback){
+        $http.post("/addFriend", info).success(function(output){
+          friends.push({name: info.name, age: info.age});
+        });
+      };
+      return factory;
+    });
+
+    //Creating a friendsController
+    friends_app.controller("friendsController", function($scope, friendFactory){
+      friendFactory.getFriends(function(data){
+        $scope.friends = data;
+      });
+
+      $scope.addFriend = function(){
+        friendFactory.addFriend($scope.new_friend, function(){
+          $scope.friends = friendFactory.getFriends();
+          $scope.new_friend = {};
+        });
+      };
+
+      $scope.removeFriend = function(friend){
+        friendFactory.removeFriend(friend, function(friends){
+          $scope.friends = friends
+        });
+      }
+    });
+    </script>
+  </head>
+  <body ng-controller="friendsController">
+    <h1>Friends</h1>
+    <input type="text" ng-model="filter_name" placeholder="filter" />
+    {{ filter_name }}
+    <ul>
+      <li ng-repeat="friend in friends | filter: filter_name">
+        {{ friend.name }}, {{ friend.age }}
+      </li>
+    </ul>
+    <h1>Add New Friend</h1>
+    <form>
+      <input type="text" ng-model="new_friend.name" placeholder="Full Name" />
+      <input type="text" ng-model="new_friend.age" placeholder="age" />
+      <!-- addFriend() is a method we are going to make in the Angular controller -->
+      <input type="submit" ng-click="addFriend()" />
+    </form>
+  </body>
+</html>
